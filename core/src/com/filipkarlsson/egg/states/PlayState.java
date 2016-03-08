@@ -9,8 +9,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.*;
 
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.utils.Array;
+
 import com.filipkarlsson.egg.EggScramble;
 import com.filipkarlsson.egg.sprites.Egg;
 import com.filipkarlsson.egg.sprites.Ground;
@@ -25,6 +24,8 @@ import java.util.ArrayList;
  * Created by filip on 10/02/16.
  */
 public class PlayState extends State {
+    private HudState hud;
+
     private static final float CAM_SPEED = 5.0f;
     private static final int CAM_OFFSET = 30;
     private int cam_target;
@@ -32,16 +33,14 @@ public class PlayState extends State {
     private Texture bg;
     private Egg egg;
     private Ground ground;
-    private HealthBar healthBar;
-    private ShapeRenderer shapeRenderer;
+    //private HealthBar healthBar;
+    //private ShapeRenderer shapeRenderer;
 
-
-    //private ArrayList<Platform> platforms;
     private PlatformManager platforms;
     private ArrayList<Shell> shells;
 
 
-    BitmapFont font = new BitmapFont();
+   // BitmapFont font = new BitmapFont();
 
     private float rotation;
 
@@ -49,6 +48,7 @@ public class PlayState extends State {
 
     public PlayState(GameStateManager gsm){
         super(gsm);
+
 
         cam.setToOrtho(false, EggScramble.WIDTH / 2, EggScramble.HEIGHT / 2);
         bg = new Texture("bg.png");
@@ -62,10 +62,10 @@ public class PlayState extends State {
         platforms.addPlatform(new Platform(y + Platform.MIN_GAP, y + Platform.MAX_GAP, this));
         generatePlatforms();
 
-        healthBar = new HealthBar(this);
-        shapeRenderer = new ShapeRenderer();
-        shapeRenderer.setProjectionMatrix(cam.combined);
-
+       // healthBar = new HealthBar(this);
+       // shapeRenderer = new ShapeRenderer();
+       // shapeRenderer.setProjectionMatrix(cam.combined);
+        hud = new HudState(this);
     }
 
     @Override
@@ -80,6 +80,8 @@ public class PlayState extends State {
                 rotation = -5;
         }
 
+        hud.handleInput();
+
     }
 
     @Override
@@ -90,14 +92,18 @@ public class PlayState extends State {
         if (egg.getHp() == 0)
             gsm.set(new MenuState(gsm));
 
-        updateCamera(dt);
 
 
         generatePlatforms();
         generateShells();
-        healthBar.update();
+        //healthBar.update();
+
+        updateCamera(dt);
+
 
         cam.update();
+
+        hud.update(dt);
 
     }
 
@@ -105,7 +111,7 @@ public class PlayState extends State {
     public void render(SpriteBatch sb) {
         sb.setProjectionMatrix(cam.combined);
         sb.begin();
-        sb.draw(bg, 0, getBottomOfScreen());
+        //sb.draw(bg, 0, getBottomOfScreen());
         sb.draw(ground.getTexture(),ground.getPosition().x, ground.getPosition().y, ground.getBounds().width, ground.getBounds().height);
 
         for (Platform platform : platforms.getPlatforms())
@@ -113,21 +119,26 @@ public class PlayState extends State {
 
         for (int i = 0; i<shells.size(); i++){
             if (shells.get(i).isActive()){
-                sb.draw(shells.get(i).getTexture(), shells.get(i).getPosition().x, shells.get(i).getPosition().y,shells.get(i).getBounds().width, shells.get(i).getBounds().height);
+                sb.draw(shells.get(i).getTexture(), shells.get(i).getPosition().x,
+                        shells.get(i).getPosition().y,shells.get(i).getBounds().width, shells.get(i).getBounds().height);
             }
         }
 
-        sb.draw(egg.getTexture(), egg.getPosition().x, egg.getPosition().y);
-        font.setColor(0.0f, 0.0f, 0.0f, 1.0f);
-        font.draw(sb, egg.getMax_y() + "", 0, getTopOfScreen() - 50);
+        egg.draw(sb);
+
+        //sb.draw(egg.getTexture(), egg.getPosition().x, egg.getPosition().y);
+        //font.setColor(0.0f, 0.0f, 0.0f, 1.0f);
+        //font.draw(sb, egg.getMax_y() + "", 0, getTopOfScreen() - 50);
 
         sb.end();
 
-        shapeRenderer.begin(ShapeType.Filled);
-        float[] c = healthBar.getColor();
-        shapeRenderer.setColor(c[0], c[1], c[2], 1.0f);
-        shapeRenderer.rect(healthBar.getBounds().x, healthBar.getBounds().y, healthBar.getBounds().width, healthBar.getBounds().height);
-        shapeRenderer.end();
+        //shapeRenderer.begin(ShapeType.Filled);
+        //float[] c = healthBar.getColor();
+        //shapeRenderer.setColor(c[0], c[1], c[2], 1.0f);
+        //shapeRenderer.rect(healthBar.getBounds().x, healthBar.getBounds().y, healthBar.getBounds().width, healthBar.getBounds().height);
+        //shapeRenderer.end();
+
+        hud.render(sb);
 
 
     }
@@ -155,7 +166,7 @@ public class PlayState extends State {
     public void dispose() {
         bg.dispose();
         egg.dispose();
-        font.dispose();
+        //font.dispose();
         ground.dispose();
 
         for (Platform platform : platforms.getPlatforms())
@@ -186,7 +197,8 @@ public class PlayState extends State {
 
     private void generateShells(){
         if (getNrOfActiveShellsAbove() == 0 && egg.getHp()<10)
-        shells.add(new Shell( (int) getLastPlatform().getPosition().x, (int)getLastPlatform().getPosition().y , 15));
+        shells.add(new Shell( (int) (getLastPlatform().getPosition().x + getLastPlatform().getBounds().width/2 - Shell.getTextureWidth()/2),
+                (int)getLastPlatform().getPosition().y + Platform.HEIGHT + 1, 15));
     }
 
     public int getNrOfActiveShellsAbove(){

@@ -1,10 +1,11 @@
 package com.filipkarlsson.egg.sprites;
 
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
-import com.filipkarlsson.egg.EggScramble;
 import com.filipkarlsson.egg.states.PlayState;
 
 import java.util.List;
@@ -17,18 +18,25 @@ public class Egg {
     private static final int GRAVITY = -15;
     private static final int X_SPEED_FACTOR = 50;
     private static final float JUMP_SPEED  = 500.0f;
-    private static final int MAX_SPEED  = (int)JUMP_SPEED * 3;
+    private static final int MAX_SPEED  = (int)JUMP_SPEED * 5;
     private static final int BOTTOM_BOUNDS_HEIGHT = 5;
+    private static final int TEXTURE_W = 554;
+    private static final int TEXTURE_H = 755;
+
+    private static final int HEIGHT = 40;
+    private static final int WIDTH = 30;
 
     private Vector3 position;
     private boolean onGround;
 
 
+    private int frameCount;
 
     private Vector3 velocity;
-    private Rectangle bounds;
     private Rectangle bottomBounds;
-    private Texture[] textures;
+    private Texture textures;
+    private TextureRegion[] frames;
+    private Sprite sprite;
 
     private double hp;
     private Platform lastBouncedPlatform;
@@ -41,15 +49,24 @@ public class Egg {
     public Egg (int x, int y){
         position = new Vector3(x, y, 0);
         velocity = new Vector3(0, 0, 0);
-        textures = new Texture[2];
-        textures[0] = new Texture("egg1.png");
-        textures[1] = new Texture("egg_cr.png");
-        bounds = new Rectangle(x, y, textures[0].getWidth(), textures[0].getHeight());
-        bottomBounds = new Rectangle(x,y, textures[0].getWidth(), BOTTOM_BOUNDS_HEIGHT);
+        textures = new Texture("egg_animation_texture.png");
+
+        frames = new TextureRegion[5];
+        frames[0] = new TextureRegion(textures, 0, 0, TEXTURE_W, TEXTURE_H);
+        frames[1] = new TextureRegion(textures, TEXTURE_W  * 1, 0, TEXTURE_W, TEXTURE_H);
+        frames[2] = new TextureRegion(textures, TEXTURE_W  * 2, 0, TEXTURE_W, TEXTURE_H);
+        frames[3] = new TextureRegion(textures, TEXTURE_W  * 3, 0, TEXTURE_W, TEXTURE_H);
+        frames[4] = new TextureRegion(textures, TEXTURE_W  * 4, 0, TEXTURE_W, TEXTURE_H);
+
+        frameCount = 0;
+
+        sprite = new Sprite();
+        sprite.setRegion(frames[frameCount]);
+        sprite.setBounds(position.x, position.y, WIDTH, HEIGHT);
+        bottomBounds = new Rectangle(x,y, sprite.getWidth(), BOTTOM_BOUNDS_HEIGHT);
         hp = 15;
     }
 
-   // public void update(float dt, float rotation, OrthographicCamera cam, List<Platform> platforms){
    public void update(float dt, PlayState game){
         if (velocity.y > MAX_SPEED)
             velocity.y = MAX_SPEED;
@@ -69,18 +86,34 @@ public class Egg {
         velocity.scl(dt);
         position.add(velocity.x, velocity.y, 0);
 
-
-        if(position.x + bounds.width < 0)
+        if(position.x + sprite.getWidth() < 0)
             position.x = game.getRightEdgeOfScreen();
         else if (position.x > game.getRightEdgeOfScreen())
-            position.x = - bounds.width;
+            position.x = - sprite.getWidth();
 
         velocity.scl(1 / dt);
 
-        bounds.setPosition(position.x, position.y);
+        sprite.setPosition(position.x, position.y);
         bottomBounds.setPosition(position.x, position.y);
 
+
+
+       sprite.setOriginCenter();
+       sprite.setRotation(game.getRotation()*1.5f);
+
         checkShellCollision(game.getShells());
+
+       if (hp < 3)
+          frameCount = 4;
+       else if (hp < 5)
+           frameCount = 3;
+       else if (hp < 7)
+           frameCount = 2;
+       else if (hp < 9)
+           frameCount = 1;
+       else
+           frameCount = 0;
+
     }
 
     public void bounce (){
@@ -96,6 +129,7 @@ public class Egg {
 
     private boolean checkCollision(PlayState game){
         boolean collision = false;
+
 
         for (Platform platform : game.getPlatforms()){
             if(bottomBounds.overlaps(platform.getBounds()) && velocity.y < 0){
@@ -116,7 +150,7 @@ public class Egg {
     private void checkShellCollision(List<Shell> shells){
 
         for (Shell shell : shells){
-            if (bounds.overlaps(shell.getBounds()) && shell.isActive()){
+            if (sprite.getBoundingRectangle().overlaps(shell.getBounds()) && shell.isActive()){
                 hp +=  shell.getValue();
                 shell.deActivate();
             }
@@ -125,16 +159,16 @@ public class Egg {
 
     }
 
+    public void draw(SpriteBatch sb){
+        sprite.setRegion(frames[frameCount]);
+        sprite.draw(sb);
+    }
 
 
     public Rectangle getBounds () {
-        return bounds;
+        return sprite.getBoundingRectangle();
     }
 
-    public Texture getTexture (){
-
-        return hp>5 ? textures[0] : textures[1];
-    }
 
     public Vector3 getPosition () {
         return position;
@@ -144,8 +178,7 @@ public class Egg {
     }
 
     public void dispose (){
-        textures[0].dispose();
-        textures[1].dispose();
+     textures.dispose();
     }
 
 

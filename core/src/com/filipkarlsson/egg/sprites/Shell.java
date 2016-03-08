@@ -11,13 +11,13 @@ public class Shell {
     private Vector2 position;
     private Rectangle bounds;
     private int value;
-    private Texture texture;
     private boolean active;
+    private static Texture texture = new Texture("g_egg.png");
+
 
     public Shell(int x_pos, int y_pos, int value) {
         this.position = new Vector2(x_pos, y_pos);
         this.value = value;
-        texture = new Texture("g_egg.png");
         this.bounds = new Rectangle(x_pos, y_pos, texture.getWidth(),texture.getHeight());
         active = true;
     }
@@ -33,7 +33,7 @@ public class Shell {
     }
 
     public void dispose(){
-        texture.dispose();
+
     }
 
     public int getValue() {
@@ -47,5 +47,9 @@ public class Shell {
         active = false;
         value = 0;
         dispose();
+    }
+
+    public static int getTextureWidth(){
+        return texture.getWidth();
     }
 }
