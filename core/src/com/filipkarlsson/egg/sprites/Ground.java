@@ -14,7 +14,7 @@ public class Ground {
 
     public Ground(int x, int y, int width, int height){
         position  = new Vector2(x, y);
-        texture = new Texture("straw.jpg");
+        texture = new Texture("ground.png");
         bounds = new Rectangle(x, y, width, height);
 
     }

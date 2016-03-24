@@ -1,6 +1,10 @@
 package com.filipkarlsson.egg.sprites;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.*;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
@@ -8,32 +12,44 @@ import com.badlogic.gdx.math.Vector2;
  * Created by filip on 14/02/16.
  */
 public class Shell {
-    private Vector2 position;
-    private Rectangle bounds;
+    private Sprite sprite;
     private int value;
     private boolean active;
-    private static Texture texture = new Texture("g_egg.png");
+    private Texture texture;
+    private Platform platform;
 
 
-    public Shell(int x_pos, int y_pos, int value) {
-        this.position = new Vector2(x_pos, y_pos);
+    public Shell(Platform platform, int value) {
+        texture = new Texture("g_egg.png");
+        this.platform = platform;
         this.value = value;
-        this.bounds = new Rectangle(x_pos, y_pos, texture.getWidth(),texture.getHeight());
+        this.sprite = new Sprite(texture);
+        sprite.setBounds(calculateXpos(), calculateYpos(), texture.getWidth(), texture.getHeight());
         active = true;
     }
 
     public Rectangle getBounds(){
-        return bounds;
+        return sprite.getBoundingRectangle();
     }
     public Texture getTexture(){
         return texture;
     }
     public Vector2 getPosition(){
-        return position;
+        return new Vector2(sprite.getX(), sprite.getY());
     }
 
-    public void dispose(){
+    public void update(){
+        sprite.setX(calculateXpos());
+        sprite.setY(calculateYpos());
+    }
 
+    public void draw(SpriteBatch sb){
+        if (isActive()) sprite.draw(sb);
+    }
+
+
+    public void dispose(){
+        texture.dispose();
     }
 
     public int getValue() {
@@ -46,10 +62,15 @@ public class Shell {
     public void deActivate(){
         active = false;
         value = 0;
-        dispose();
     }
 
-    public static int getTextureWidth(){
-        return texture.getWidth();
+    private float calculateXpos(){
+        return platform.getPosition().x + platform.getBounds().width / 2 - texture.getWidth()/2;
     }
+
+    private float calculateYpos(){
+        return platform.getPosition().y + platform.getBounds().height;
+
+    }
+
 }
